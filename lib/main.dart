@@ -142,16 +142,8 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
             color: Color(0xFF101010),
           ),
         ),
-        leading: Padding(
-          // 实现左侧 20px 边距
-          padding: const EdgeInsets.only(left: 20.0),
-        ),
-        actions: [
-          Padding(
-            // 实现右侧侧 20px 边距
-            padding: const EdgeInsets.only(right: 20.0),
-          ),
-        ],
+        leading: const SizedBox.shrink(),
+        actions: [const SizedBox(width: 20.0)],
       ),
 
       /// 保证键盘弹出时页面能滚动

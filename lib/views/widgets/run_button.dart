@@ -8,6 +8,7 @@ class RunButton extends StatefulWidget {
   final String text; // 按钮上显示的文本
   final double fontSize; // 按钮文本的字号
   final double letterSpacing; // 按钮的字间距，默认 4
+  final Duration pressFeedbackDuration; // 点击后预留的反馈时长，保证水波纹可感知
 
   const RunButton({
     super.key,
@@ -18,6 +19,7 @@ class RunButton extends StatefulWidget {
     required this.text,
     this.fontSize = 18, // 默认按钮文本的字号 18
     this.letterSpacing = 4, // 默认按钮的字间距 4
+    this.pressFeedbackDuration = const Duration(milliseconds: 90),
   });
 
   @override
@@ -25,87 +27,78 @@ class RunButton extends StatefulWidget {
 }
 
 class _RunButtonState extends State<RunButton> {
-  // 存储原始的颜色状态，用于恢复
-  late final Color _originalBgColor;
-  late final Color _originalTextColor;
-  // 存储当前的颜色状态
-  late Color _currentBgColor;
-  late Color _currentTextColor;
-
-  @ override
-  void initState() {
-    super.initState();
-
-    // 初始化原始颜色和当前颜色
-    _originalBgColor = widget.backgroundColor;
-    _originalTextColor = widget.textColor;
-    _currentBgColor = widget.backgroundColor;
-    _currentTextColor = widget.textColor;
-  }
-
-  @override
-  void didUpdateWidget(covariant RunButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.backgroundColor != oldWidget.backgroundColor || widget.textColor != oldWidget.textColor) {
-      // 只有在未按下状态时才同步外部传入的颜色变化
-      if (_currentBgColor == _originalBgColor) {
-        _currentBgColor = widget.backgroundColor;
-        _currentTextColor = widget.textColor;
-      }
-      _originalBgColor = widget.backgroundColor;
-      _originalTextColor = widget.textColor;
-    }
-  }
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return SizedBox(
-          width: double.infinity,
-          height: widget.height,
-          child: ElevatedButton(
-            onPressed: () async {
-              // 先互换背景颜色和文本颜色
-              if (mounted) {
+    final borderRadius = BorderRadius.circular(10.0);
+
+    return SizedBox(
+      width: double.infinity,
+      height: widget.height,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.985 : 1.0,
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: widget.backgroundColor.withOpacity(
+                  _isPressed ? 0.16 : 0.28,
+                ),
+                blurRadius: _isPressed ? 6 : 12,
+                offset: Offset(0, _isPressed ? 2 : 5),
+              ),
+            ],
+          ),
+          child: Material(
+            color: widget.backgroundColor,
+            borderRadius: borderRadius,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () async {
+                // 给水波纹短暂展示时间，避免立即跳转导致反馈不可见
+                await Future.delayed(widget.pressFeedbackDuration);
+                await widget.onPressed();
+              },
+              onHighlightChanged: (value) {
+                if (_isPressed == value) return;
                 setState(() {
-                  final temp = _currentBgColor;
-                  _currentBgColor = _currentTextColor;
-                  _currentTextColor = temp;
+                  _isPressed = value;
                 });
-              }
-              // 等待 150 毫秒
-              await Future.delayed(const Duration(milliseconds: 150));
-              // 再执行外部操作，并等待其完成
-              await widget.onPressed();
-              // 最后再恢复背景颜色和文本颜色
-              if (mounted) {
-                setState(() {
-                  _currentBgColor = _originalBgColor;
-                  _currentTextColor = _originalTextColor;
-                });
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _currentBgColor,
-              foregroundColor: _currentTextColor,
-              side: BorderSide(color: const Color(0x80101010), width: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-              elevation: 5,
-              shadowColor: _currentBgColor.withOpacity(0.3),
-            ),
-            child: Text(
-              widget.text,
-              style: TextStyle(
-                fontSize: widget.fontSize,
-                fontWeight: FontWeight.bold,
-                color: _currentTextColor,
-                letterSpacing: widget.letterSpacing,
+              },
+              borderRadius: borderRadius,
+              splashFactory: InkRipple.splashFactory,
+              splashColor: widget.textColor.withOpacity(0.20),
+              highlightColor: widget.textColor.withOpacity(0.06),
+              hoverColor: widget.textColor.withOpacity(0.04),
+              child: Ink(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  border: const Border.fromBorderSide(
+                    BorderSide(color: Color(0x80101010), width: 1),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.text,
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.bold,
+                      color: widget.textColor,
+                      letterSpacing: widget.letterSpacing,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

@@ -24,7 +24,8 @@ class HandheldSubtitlesRunPage extends StatefulWidget {
   });
 
   @override
-  State<HandheldSubtitlesRunPage> createState() => _HandheldSubtitlesRunPageState();
+  State<HandheldSubtitlesRunPage> createState() =>
+      _HandheldSubtitlesRunPageState();
 }
 
 class _HandheldSubtitlesRunPageState extends State<HandheldSubtitlesRunPage> {
@@ -92,7 +93,10 @@ class _HandheldSubtitlesRunPageState extends State<HandheldSubtitlesRunPage> {
   }
 
   /// 进入全屏
-  Future<void> _enterFullscreen({bool hideStatus = true, bool hideNavigation = true}) async {
+  Future<void> _enterFullscreen({
+    bool hideStatus = true,
+    bool hideNavigation = true,
+  }) async {
     /// 1. 设置横屏
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
@@ -113,7 +117,8 @@ class _HandheldSubtitlesRunPageState extends State<HandheldSubtitlesRunPage> {
           systemNavigationBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
           systemNavigationBarIconBrightness:
-              WidgetsBinding.instance.window.platformBrightness == Brightness.dark
+              WidgetsBinding.instance.window.platformBrightness ==
+                  Brightness.dark
               ? Brightness.light
               : Brightness.dark,
           // iOS 状态栏亮度
@@ -122,7 +127,10 @@ class _HandheldSubtitlesRunPageState extends State<HandheldSubtitlesRunPage> {
       );
 
       /// Step 2：再进入沉浸模式
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky, overlays: overlays);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+        overlays: overlays,
+      );
     } catch (e) {
       print('Failed to enter fullscreen mode: $e');
     }
@@ -149,31 +157,33 @@ class _HandheldSubtitlesRunPageState extends State<HandheldSubtitlesRunPage> {
   void _showRunPageRightSheet(BuildContext context) {
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => RunPageRightSheetContent(
-          onEditPressed: () async {
-            print('clicked Edit');
-            // 退出逻辑
-            await _handleExit();
-          },
-          onExitPressed: () {
-            print('clicked Exit');
-            // // 退出应用
-            // SystemNavigator.pop();
-          },
-        ),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            RunPageRightSheetContent(
+              onEditPressed: () async {
+                print('clicked Edit');
+                // 退出逻辑
+                await _handleExit();
+              },
+              onExitPressed: () {
+                SystemNavigator.pop();
+              },
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // 从右侧滑动效果
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
-          const curve = Curves.easeOutQuart;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          const curve = Curves.easeOutCubic;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
           return SlideTransition(position: offsetAnimation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 320),
         opaque: false,
         // 半透明遮罩
-        barrierColor: Colors.black54,
+        barrierColor: const Color(0x8A101010),
       ),
     );
   }
