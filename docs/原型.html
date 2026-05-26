@@ -1,799 +1,1930 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<title>手持字幕 - 原型</title>
-	<style>
-		/* Reset & Base */
-		* {
-			box-sizing: border-box;
-			margin: 0;
-			padding: 0;
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-			-webkit-tap-highlight-color: transparent;
-		}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手持字幕 - 高保真原型</title>
+    <style>
+        @font-face {
+            font-family: 'FangZheng-JianTi';
+            src: url('../assets/fonts/方正/方正楷体简体中文.ttf');
+        }
+        @font-face {
+            font-family: 'HanYiZhiYan-KaTong';
+            src: url('../assets/fonts/汉仪字研/汉仪字研卡通.ttf');
+        }
+        @font-face {
+            font-family: 'SmileySans';
+            src: url('../assets/fonts/得意黑/SmileySans-Oblique.ttf');
+        }
 
-		body {
-			background-color: #333;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			min-height: 100vh;
-			overflow: hidden;
-		}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
 
-		.device-mockup {
-			width: 375px;
-			height: 812px;
-			background: #F8F8F8;
-			border-radius: 40px;
-			position: relative;
-			overflow: hidden;
-			box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-			border: 8px solid #000;
-		}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
 
-		/* Page Home */
-		#page-home {
-			display: flex;
-			flex-direction: column;
-			height: 100%;
-			background-color: #F8F8F8;
-		}
+        .demo-title {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
 
-		.header {
-			height: 60px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 20px;
-			font-weight: bold;
-			color: #101010;
-			padding-top: 10px;
-			/* Safe area top simulation */
-		}
+        .screen-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
 
-		.content-area {
-			flex: 1;
-			overflow-y: auto;
-			padding: 0 20px 34px 20px;
-		}
+        .screen-tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
 
-		/* 1. Preview */
-		.preview-container {
-			padding: 15px 0;
-		}
+        .screen-tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
 
-		.preview-box {
-			width: 100%;
-			aspect-ratio: 21 / 9;
-			background-color: #101010;
-			border-radius: 16px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			overflow: hidden;
-			position: relative;
-		}
+        .screen-tab.active {
+            background: white;
+            color: #101010;
+            border-color: white;
+        }
 
-		.preview-text {
-			color: #F8F8F8;
-			font-size: 20px;
-			/* dynamic */
-			white-space: nowrap;
-			height: 1em;
-			line-height: 1;
-			position: absolute;
-		}
+        .screen-container {
+            position: relative;
+        }
 
-		/* 2. Text Input */
-		.input-container {
-			height: 90px;
-			background: #FFFFFF;
-			border: 1px solid #EBEBEB;
-			border-radius: 5px;
-			padding: 10px;
-			margin-top: 5px;
-			margin-bottom: 5px;
-		}
+        .screen {
+            display: none;
+        }
 
-		.input-container textarea {
-			width: 100%;
-			height: 100%;
-			border: none;
-			resize: none;
-			outline: none;
-			font-size: 16px;
-			color: #101010;
-		}
+        .screen.active {
+            display: block;
+            animation: screenFadeIn 0.3s ease-out;
+        }
 
-		.input-container textarea::placeholder {
-			color: #999;
-		}
+        @keyframes screenFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
 
-		/* Dashed Divider */
-		.dashed-divider {
-			height: 1px;
-			background-image: linear-gradient(to right, #EBEBEB 50%, transparent 50%);
-			background-size: 4px 100%;
-			margin: 10px 0;
-		}
+        /* Phone Frame */
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: #000000;
+            border-radius: 50px;
+            padding: 12px;
+            box-shadow:
+                0 0 0 2px #333,
+                0 0 0 4px #1a1a1a,
+                0 30px 90px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
 
-		/* Option Rows */
-		.option-row {
-			display: flex;
-			align-items: center;
-			height: 59px;
-			padding: 13px 0;
-		}
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #F8F8F8;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+        }
 
-		.option-label {
-			font-size: 18px;
-			color: #101010;
-			white-space: nowrap;
-			margin-right: 10px;
-		}
+        /* Notch */
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background: #000000;
+            border-radius: 0 0 20px 20px;
+            z-index: 1000;
+        }
 
-		.option-scroll {
-			flex: 1;
-			display: flex;
-			overflow-x: auto;
-			scroll-behavior: smooth;
-			min-width: 0;
-			/* 必须加 min-width: 0 以便允许 flex 容器内的滚动 */
-			-webkit-overflow-scrolling: touch;
-		}
+        .notch::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 6px;
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
 
-		.option-scroll::-webkit-scrollbar {
-			display: none;
-		}
+        .notch::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            width: 8px;
+            height: 8px;
+            background: #1a1a1a;
+            border-radius: 50%;
+        }
 
-		.opt-btn {
-			min-width: 70px;
-			height: 33px;
-			margin-right: 10px;
-			border-radius: 10px;
-			border: 1px solid rgba(187, 187, 187, 0.5);
-			background: #FFF;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0 15px;
-			font-size: 14px;
-			font-weight: bold;
-			color: #101010;
-			flex-shrink: 0;
-			cursor: pointer;
-		}
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            background: #F8F8F8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #101010;
+            position: relative;
+            z-index: 100;
+        }
 
-		.opt-btn.selected {
-			border: 1.5px solid rgba(16, 16, 16, 0.5);
-		}
+        .status-bar-time {
+            font-size: 15px;
+            font-weight: 600;
+        }
 
-		/* Specific Colors logic */
-		.color-btn {
-			border: 1px solid rgba(187, 187, 187, 0.5);
-		}
+        .status-bar-icons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
 
-		.color-btn.selected {
-			border-width: 1.5px;
-		}
+        .status-bar-icons svg {
+            width: 18px;
+            height: 18px;
+        }
 
-		/* Slider Row */
-		.slider-row {
-			display: flex;
-			align-items: center;
-			padding: 13px 0;
-		}
+        /* Navigation Bar */
+        .navigation-bar {
+            height: 34px;
+            background: #F8F8F8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-		input[type=range] {
-			flex: 1;
-			-webkit-appearance: none;
-			height: 3px;
-			background: #E0E0E0;
-			outline: none;
-			border-radius: 2px;
-		}
+        .home-indicator {
+            width: 134px;
+            height: 5px;
+            background: #101010;
+            border-radius: 3px;
+            opacity: 0.3;
+        }
 
-		input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			appearance: none;
-			width: 20px;
-			height: 20px;
-			border-radius: 50%;
-			background: #101010;
-			cursor: pointer;
-		}
+        /* Home Screen Layout */
+        .home-content {
+            height: calc(100% - 44px - 34px);
+            display: flex;
+            flex-direction: column;
+            background: #F8F8F8;
+        }
 
-		/* Run Button */
-		.run-button-container {
-			padding: 0 20px 34px 20px;
-		}
+        /* AppBar */
+        .app-bar {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F8F8F8;
+            flex-shrink: 0;
+        }
 
-		.run-btn {
-			width: 100%;
-			height: 45px;
-			background: #101010;
-			color: #F8F8F8;
-			border-radius: 10px;
-			font-size: 18px;
-			font-weight: bold;
-			letter-spacing: 4px;
-			border: 1px solid rgba(16, 16, 16, 0.5);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-			box-shadow: 0 5px 12px rgba(16, 16, 16, 0.28);
-			transition: transform 0.11s cubic-bezier(0.215, 0.61, 0.355, 1), box-shadow 0.12s cubic-bezier(0.215, 0.61, 0.355, 1);
-		}
+        .app-bar-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #101010;
+            letter-spacing: 0.5px;
+        }
 
-		.run-btn:active {
-			transform: scale(0.985);
-			box-shadow: 0 2px 6px rgba(16, 16, 16, 0.16);
-		}
+        /* Scrollable Body */
+        .body-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 0 20px 34px 20px;
+        }
 
-		/* Page Run (Fullscreen mode simulation) */
-		#page-run {
-			display: none;
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: #101010;
-			z-index: 10;
-			/* Simulate landscape inside the portrait device */
-			transform-origin: center center;
-			width: 812px;
-			height: 375px;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%) rotate(90deg);
-		}
+        .body-scroll::-webkit-scrollbar {
+            width: 0;
+        }
 
-		.run-wrapper {
-			position: relative;
-			width: 100%;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			overflow: hidden;
-			cursor: pointer;
-		}
+        /* Preview Area */
+        .preview-container {
+            padding: 15px 0;
+        }
 
-		.run-text {
-			color: #F8F8F8;
-			white-space: nowrap;
-			position: absolute;
-			line-height: 1;
-			animation: linear infinite;
-		}
+        .preview-box {
+            width: 100%;
+            aspect-ratio: 21 / 9;
+            background: #101010;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
 
-		/* Right Sheet Panel */
-		.run-panel-overlay {
-			display: none;
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(16, 16, 16, 0.54);
-			z-index: 20;
-		}
+        .preview-scroll-content {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            margin: auto 0;
+            white-space: nowrap;
+            will-change: transform;
+        }
 
-		.run-panel {
-			position: absolute;
-			right: -320px;
-			top: 0;
-			bottom: 0;
-			width: 280px;
-			background: #F8F8F8;
-			border-radius: 24px 0 0 24px;
-			border-left: 1px solid #E9E9E9;
-			box-shadow: -6px 0 24px rgba(0, 0, 0, 0.16);
-			transition: right 0.32s cubic-bezier(0.215, 0.61, 0.355, 1);
-			padding: 16px;
-			display: flex;
-			flex-direction: column;
-		}
+        .preview-spacer {
+            flex-shrink: 0;
+        }
 
-		.panel-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-start;
-			margin-bottom: 20px;
-		}
+        .preview-text {
+            color: #F8F8F8;
+            line-height: 1;
+            white-space: nowrap;
+        }
 
-		.panel-title {
-			font-size: 20px;
-			font-weight: 700;
-			color: #101010;
-			letter-spacing: 0.2px;
-			margin-top: 4px;
-		}
+        .preview-gap {
+            width: 50px;
+            flex-shrink: 0;
+        }
 
-		.panel-close {
-			width: 34px;
-			height: 34px;
-			border-radius: 50%;
-			background: #FFF;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-		}
+        /* Text Input */
+        .input-container {
+            height: 90px;
+            background: #FFFFFF;
+            border: 1px solid #EBEBEB;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            overflow: hidden;
+        }
 
-		.panel-close-icon {
-			font-size: 18px;
-			color: #101010;
-			font-weight: bold;
-		}
+        .input-text {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #101010;
+            background: transparent;
+            resize: none;
+            font-family: inherit;
+        }
 
-		.panel-actions {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-		}
+        .input-text::placeholder {
+            color: #999;
+        }
 
-		.action-btn {
-			height: 56px;
-			border-radius: 28px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 18px;
-			font-weight: 600;
-			letter-spacing: 0.1px;
-			cursor: pointer;
-			border: none;
-			outline: none;
-		}
+        /* Dashed Divider */
+        .dashed-divider {
+            height: 1px;
+            background-image: linear-gradient(to right, #EBEBEB 50%, transparent 50%);
+            background-size: 4px 100%;
+        }
 
-		.btn-primary {
-			background: #101010;
-			color: #FFF;
-			border: 1px solid #101010;
-		}
+        /* Option Rows */
+        .option-row {
+            display: flex;
+            align-items: center;
+            min-height: 59px;
+            padding: 13px 0;
+        }
 
-		.btn-danger {
-			background: #FFF4F4;
-			color: #FF4D4F;
-			border: 1px solid #FFDCDD;
-			margin-top: 28px;
-		}
+        .option-label {
+            font-size: 18px;
+            color: #101010;
+            white-space: nowrap;
+            margin-right: 10px;
+        }
 
-		/* Effects */
-		@keyframes flash {
+        .option-scroll {
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            cursor: grab;
+            scrollbar-width: none;
+        }
 
-			0%,
-			100% {
-				opacity: 1;
-			}
+        .option-scroll::-webkit-scrollbar {
+            display: none;
+        }
 
-			50% {
-				opacity: 0;
-			}
-		}
+        .option-scroll:active {
+            cursor: grabbing;
+        }
 
-		.effect-flash {
-			animation: flash 0.5s infinite alternate !important;
-		}
+        /* Color Theme Buttons - pill shape */
+        .color-btn {
+            min-width: 70px;
+            margin-right: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(187, 187, 187, 0.5);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            cursor: pointer;
+            white-space: nowrap;
+        }
 
-		@keyframes shake {
-			0% {
-				transform: translate(0, 0);
-			}
+        .color-btn.selected {
+            border-width: 1.5px !important;
+        }
 
-			20% {
-				transform: translate(-2px, 2px);
-			}
+        /* Font/Size Buttons */
+        .opt-btn {
+            min-width: 70px;
+            margin-right: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(187, 187, 187, 0.5);
+            background: #FFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 15px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #101010;
+            flex-shrink: 0;
+            cursor: pointer;
+            white-space: nowrap;
+        }
 
-			40% {
-				transform: translate(2px, -2px);
-			}
+        .opt-btn.selected {
+            border: 1.5px solid rgba(16, 16, 16, 0.5);
+            font-weight: 700;
+        }
 
-			60% {
-				transform: translate(-2px, -2px);
-			}
+        /* Slider Row */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            padding: 13px 0;
+        }
 
-			80% {
-				transform: translate(2px, 2px);
-			}
+        input[type=range] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 3px;
+            background: #E0E0E0;
+            outline: none;
+            border-radius: 2px;
+        }
 
-			100% {
-				transform: translate(0, 0);
-			}
-		}
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #101010;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
 
-		.effect-shake {
-			animation: shake 0.3s infinite !important;
-		}
+        /* Run Button */
+        .run-btn-wrapper {
+            flex-shrink: 0;
+            padding: 0 20px 34px 20px;
+        }
 
-		/* Marquee Animation */
-		@keyframes marquee {
-			from {
-				left: 0;
-				transform: translateX(var(--start-x, 100vw));
-			}
+        .run-btn {
+            width: 100%;
+            height: 45px;
+            background: #101010;
+            color: #F8F8F8;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            border: 1px solid rgba(16, 16, 16, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 12px rgba(16, 16, 16, 0.28);
+        }
 
-			to {
-				left: 0;
-				transform: translateX(-100%);
-			}
-		}
-	</style>
+        /* Landscape Phone Frame for Run Page */
+        .phone-frame-landscape {
+            width: 812px;
+            height: 375px;
+            background: #000000;
+            border-radius: 50px;
+            padding: 12px;
+            box-shadow:
+                0 0 0 2px #333,
+                0 0 0 4px #1a1a1a,
+                0 30px 90px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .phone-screen-landscape {
+            width: 100%;
+            height: 100%;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .run-fullscreen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .run-preview-container {
+            width: 100%;
+            aspect-ratio: 21 / 9;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .run-scroll-content {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            margin: auto 0;
+            white-space: nowrap;
+            will-change: transform;
+        }
+
+        .run-spacer {
+            flex-shrink: 0;
+        }
+
+        .run-text {
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .run-gap {
+            width: 50px;
+            flex-shrink: 0;
+        }
+
+        /* Right Panel Overlay */
+        .panel-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(16, 16, 16, 0.54);
+            display: none;
+            justify-content: flex-end;
+            z-index: 100;
+        }
+
+        .panel-overlay.active {
+            display: flex;
+        }
+
+        .panel-overlay.active .right-panel {
+            animation: panelSlideIn 0.32s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+        }
+
+        .panel-overlay.closing .right-panel {
+            animation: panelSlideOut 0.25s ease-in both;
+        }
+
+        @keyframes panelSlideIn {
+            from { transform: translateX(100%); }
+            to   { transform: translateX(0); }
+        }
+
+        @keyframes panelSlideOut {
+            from { transform: translateX(0); }
+            to   { transform: translateX(100%); }
+        }
+
+        .right-panel {
+            height: 100%;
+            background: #F8F8F8;
+            border-radius: 24px 0 0 24px;
+            border-left: 1px solid #E9E9E9;
+            box-shadow: -6px 0 24px rgba(0, 0, 0, 0.16);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #101010;
+            letter-spacing: 0.2px;
+            margin-top: 4px;
+        }
+
+        .panel-close {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .panel-close-icon {
+            font-size: 18px;
+            color: #101010;
+            font-weight: bold;
+        }
+
+        .panel-actions {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .action-btn {
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.1px;
+            cursor: pointer;
+            border: none;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #101010;
+            color: #FFF;
+            border: 1px solid #101010;
+        }
+
+        .btn-danger {
+            background: #FFF4F4;
+            color: #FF4D4F;
+            border: 1px solid #FFDCDD;
+            margin-top: 28px;
+        }
+
+        /* FlashingText effect */
+        @keyframes flashColor {
+            0% { color: #FFFFFF; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+            14.28% { color: #F44336; text-shadow: 0 0 10px rgba(244,67,54,0.8); }
+            28.57% { color: #FFEB3B; text-shadow: 0 0 10px rgba(255,235,59,0.8); }
+            42.85% { color: #4CAF50; text-shadow: 0 0 10px rgba(76,175,80,0.8); }
+            57.14% { color: #2196F3; text-shadow: 0 0 10px rgba(33,150,243,0.8); }
+            71.42% { color: #9C27B0; text-shadow: 0 0 10px rgba(156,39,176,0.8); }
+            85.71% { color: #00BCD4; text-shadow: 0 0 10px rgba(0,188,212,0.8); }
+            100% { color: #FFFFFF; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        }
+
+        .effect-flash {
+            animation: flashColor 2s linear infinite !important;
+        }
+
+        /* ShakingText effect */
+        @keyframes shakeLayer1 {
+            0% { transform: translate(0, 0); opacity: 0.5; }
+            25% { transform: translate(-5px, 3px); }
+            50% { transform: translate(3px, -4px); }
+            75% { transform: translate(-4px, -2px); }
+            100% { transform: translate(2px, 5px); opacity: 1.0; }
+        }
+
+        @keyframes shakeLayer2 {
+            0% { transform: translate(0, 0); opacity: 0.5; }
+            25% { transform: translate(4px, -5px); }
+            50% { transform: translate(-3px, 4px); }
+            75% { transform: translate(5px, 2px); }
+            100% { transform: translate(-2px, -3px); opacity: 1.0; }
+        }
+
+        @keyframes shakeLayer3 {
+            0% { transform: translate(0, 0); opacity: 0.5; }
+            25% { transform: translate(-2px, -4px); }
+            50% { transform: translate(5px, 3px); }
+            75% { transform: translate(-3px, 5px); }
+            100% { transform: translate(4px, -2px); opacity: 1.0; }
+        }
+
+        .effect-shake {
+            position: relative;
+            z-index: 0;
+            display: inline-block;
+            animation: btnShakeMain 0.5s ease-in-out infinite alternate;
+        }
+
+        .effect-shake::before,
+        .effect-shake::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .effect-shake::before {
+            color: transparent;
+            -webkit-text-stroke: 6px rgba(255, 105, 180, 0.7);
+            animation: btnShakeLayer1 0.5s ease-in-out infinite alternate;
+            z-index: -2;
+        }
+
+        .effect-shake::after {
+            color: transparent;
+            -webkit-text-stroke: 3px rgba(0, 255, 255, 0.7);
+            animation: btnShakeLayer2 0.5s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        /* Button Shake Effect */
+        .effect-btn-shake {
+            position: relative;
+            z-index: 0;
+            animation: btnShakeMain 0.5s ease-in-out infinite alternate;
+        }
+
+        .effect-btn-shake::before,
+        .effect-btn-shake::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .effect-btn-shake::before {
+            color: transparent;
+            -webkit-text-stroke: 6px rgba(255, 105, 180, 0.7);
+            animation: btnShakeLayer1 0.5s ease-in-out infinite alternate;
+        }
+
+        .effect-btn-shake::after {
+            color: transparent;
+            -webkit-text-stroke: 3px rgba(0, 255, 255, 0.7);
+            animation: btnShakeLayer2 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes btnShakeMain {
+            0% { transform: translate(0, 0); opacity: 0.7; }
+            25% { transform: translate(-2px, 2px); }
+            50% { transform: translate(3px, -2px); }
+            75% { transform: translate(-1px, 1px); }
+            100% { transform: translate(2px, -2px); opacity: 1.0; }
+        }
+
+        @keyframes btnShakeLayer1 {
+            0% { transform: translate(0, 0); opacity: 0.5; }
+            25% { transform: translate(-4px, 3px); }
+            50% { transform: translate(3px, -5px); }
+            75% { transform: translate(-5px, -2px); }
+            100% { transform: translate(2px, 4px); opacity: 1.0; }
+        }
+
+        @keyframes btnShakeLayer2 {
+            0% { transform: translate(0, 0); opacity: 0.5; }
+            25% { transform: translate(3px, -4px); }
+            50% { transform: translate(-2px, 4px); }
+            75% { transform: translate(5px, 2px); }
+            100% { transform: translate(-3px, -3px); opacity: 1.0; }
+        }
+
+        /* Design System */
+        .design-system {
+            width: 900px;
+            max-width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .design-system h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #101010;
+        }
+
+        .design-section {
+            margin-bottom: 40px;
+        }
+
+        .design-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #101010;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #101010;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .color-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-preview {
+            height: 80px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .color-info {
+            padding: 10px;
+            background: white;
+        }
+
+        .color-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #101010;
+            margin-bottom: 4px;
+        }
+
+        .color-value {
+            font-size: 11px;
+            color: #808080;
+            font-family: monospace;
+            margin-bottom: 4px;
+        }
+
+        .color-usage {
+            font-size: 11px;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        .typography-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .typography-item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .typography-label {
+            font-size: 12px;
+            color: #808080;
+            margin-bottom: 8px;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .component-card {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+        }
+
+        .component-card h4 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #101010;
+        }
+
+        .component-card ul {
+            font-size: 13px;
+            color: #555;
+            margin-left: 18px;
+            line-height: 1.8;
+        }
+
+        .flow-diagram {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .flow-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .flow-number {
+            width: 32px;
+            height: 32px;
+            background: #101010;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .flow-text {
+            font-size: 14px;
+            color: #101010;
+        }
+
+        .flow-arrow {
+            margin-left: 45px;
+            margin-bottom: 15px;
+            color: #808080;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .theme-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-preview {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .theme-info {
+            padding: 10px;
+            background: white;
+        }
+
+        .theme-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #101010;
+        }
+    </style>
 </head>
-
 <body>
+    <div class="demo-title">手持字幕 App - 高保真原型</div>
 
-	<div class="device-mockup">
-		<!-- HOMEPAGE -->
-		<div id="page-home">
-			<div class="header">手持字幕</div>
-			<div class="content-area">
-				<!-- Preview -->
-				<div class="preview-container">
-					<div class="preview-box" id="preview-box">
-						<div class="preview-text" id="preview-text">输入字幕... ...</div>
-					</div>
-				</div>
+    <div class="screen-tabs">
+        <div class="screen-tab active" data-screen="home">1. 主界面</div>
+        <div class="screen-tab" data-screen="run">2. 运行界面</div>
+        <div class="screen-tab" data-screen="flash">3. 闪烁效果</div>
+        <div class="screen-tab" data-screen="shake">4. 抖动效果</div>
+        <div class="screen-tab" data-screen="design">设计规范</div>
+    </div>
 
-				<!-- Input -->
-				<div class="input-container">
-					<textarea id="text-input" placeholder="输入字幕... ..."></textarea>
-				</div>
-				<div class="dashed-divider"></div>
+    <div class="screen-container">
+        <!-- 1. Home Screen -->
+        <div class="screen active" id="home-screen">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="notch"></div>
+                    <div class="status-bar">
+                        <span class="status-bar-time">9:41</span>
+                        <div class="status-bar-icons">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                        </div>
+                    </div>
+                    <div class="home-content">
+                        <!-- AppBar -->
+                        <div class="app-bar">
+                            <div class="app-bar-title">手持字幕</div>
+                        </div>
+                        <!-- Scrollable Body -->
+                        <div class="body-scroll">
+                            <!-- Preview -->
+                            <div class="preview-container">
+                                <div class="preview-box" id="preview-box">
+                                    <div class="preview-scroll-content" id="preview-scroll-content">
+                                        <div class="preview-spacer" id="preview-spacer"></div>
+                                        <div class="preview-text" id="preview-text">输入字幕... ...</div>
+                                        <div class="preview-gap"></div>
+                                    </div>
+                                </div>
+                            </div>
 
-				<!-- Colors -->
-				<div class="option-row">
-					<div class="option-scroll" id="color-options">
-						<!-- JS 渲染 -->
-					</div>
-				</div>
-				<div class="dashed-divider"></div>
+                            <!-- Input -->
+                            <div class="input-container">
+                                <textarea class="input-text" id="text-input" placeholder="输入字幕... ..."></textarea>
+                            </div>
+                            <div class="dashed-divider"></div>
 
-				<!-- Fonts -->
-				<div class="option-row">
-					<div class="option-label">字&nbsp;&nbsp;体：</div>
-					<div class="option-scroll" id="font-options">
-						<!-- JS 渲染 -->
-					</div>
-				</div>
-				<div class="dashed-divider"></div>
+                        <!-- Colors -->
+                        <div class="option-row" style="padding-top: 5px; padding-bottom: 5px;">
+                            <div class="option-scroll" id="color-options" style="padding-top: 8px; padding-bottom: 8px;"></div>
+                        </div>
+                        <div class="dashed-divider"></div>
 
-				<!-- Sizes -->
-				<div class="option-row">
-					<div class="option-label">大&nbsp;&nbsp;小：</div>
-					<div class="option-scroll" id="size-options">
-						<!-- JS 渲染 -->
-					</div>
-				</div>
-				<div class="dashed-divider"></div>
+                            <!-- Fonts -->
+                            <div class="option-row">
+                                <div class="option-label">字体：</div>
+                                <div class="option-scroll" id="font-options"></div>
+                            </div>
+                            <div class="dashed-divider"></div>
 
-				<!-- Speed -->
-				<div class="slider-row">
-					<div class="option-label">速&nbsp;&nbsp;度：</div>
-					<input type="range" id="speed-input" min="0.5" max="5.0" step="0.1" value="2.0">
-				</div>
-			</div>
+                            <!-- Sizes -->
+                            <div class="option-row">
+                                <div class="option-label">大小：</div>
+                                <div class="option-scroll" id="size-options"></div>
+                            </div>
+                            <div class="dashed-divider"></div>
 
-			<!-- Run Button -->
-			<div class="run-button-container">
-				<div class="run-btn" id="run-btn">运&nbsp;&nbsp;行</div>
-			</div>
-		</div>
+                            <!-- Speed -->
+                            <div class="slider-row">
+                                <div class="option-label">速度：</div>
+                                <input type="range" id="speed-input" min="0.5" max="5.0" step="0.1" value="2.0">
+                            </div>
+                        </div>
+                        <div class="run-btn-wrapper">
+                            <div class="run-btn" id="run-btn">运 行</div>
+                        </div>
+                    </div>
+                    <div class="navigation-bar">
+                        <div class="home-indicator"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-		<!-- RUN PAGE -->
-		<div id="page-run">
-			<div class="run-wrapper" id="run-wrapper">
-				<div class="run-text" id="run-text">输入字幕... ...</div>
-			</div>
+        <!-- 2. Run Screen (with panel overlay) -->
+        <div class="screen" id="run-screen">
+            <div class="phone-frame-landscape">
+                <div class="phone-screen-landscape" id="run-bg">
+                    <div class="run-fullscreen" id="run-fullscreen">
+                        <div class="run-preview-container" id="run-preview-container">
+                            <div class="run-scroll-content" id="run-scroll-content">
+                                <div class="run-spacer" id="run-spacer"></div>
+                                <div class="run-text" id="run-text">输入字幕... ...</div>
+                                <div class="run-gap"></div>
+                            </div>
+                        </div>
+                        <!-- Panel Overlay -->
+                        <div class="panel-overlay" id="panel-overlay">
+                            <div class="right-panel" id="right-panel">
+                                <div class="panel-header">
+                                    <div class="panel-title">操作面板</div>
+                                    <div class="panel-close" id="panel-close">
+                                        <span class="panel-close-icon">✕</span>
+                                    </div>
+                                </div>
+                                <div class="panel-actions">
+                                    <button class="action-btn btn-primary" id="panel-edit-btn">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                        修改样式
+                                    </button>
+                                    <button class="action-btn btn-danger" id="panel-exit-btn">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
+                                        退出程序
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-			<div class="run-panel-overlay" id="run-panel-overlay">
-				<div class="run-panel" id="run-panel">
-					<div class="panel-header">
-						<div class="panel-title">操作面板</div>
-						<div class="panel-close" id="panel-close">
-							<span class="panel-close-icon">✕</span>
-						</div>
-					</div>
-					<div class="panel-actions">
-						<button class="action-btn btn-primary" id="btn-edit">
-							修改样式
-						</button>
-						<button class="action-btn btn-danger" id="btn-exit">
-							退出程序
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
+        <!-- 4. Flash Effect Screen -->
+        <div class="screen" id="flash-screen">
+            <div class="phone-frame-landscape">
+                <div class="phone-screen-landscape" style="background: #101010;">
+                    <div class="run-fullscreen">
+                        <div class="run-preview-container" id="flash-preview-container" style="background: #101010;">
+                            <div class="run-scroll-content" id="flash-scroll-content">
+                                <div class="run-spacer" id="flash-spacer"></div>
+                                <div class="run-text effect-flash" id="flash-text" style="font-size: 120px;" data-text="闪烁效果演示">闪烁效果演示</div>
+                                <div class="run-gap"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	</div>
+        <!-- 5. Shake Effect Screen -->
+        <div class="screen" id="shake-screen">
+            <div class="phone-frame-landscape">
+                <div class="phone-screen-landscape" style="background: #101010;">
+                    <div class="run-fullscreen">
+                        <div class="run-preview-container" id="shake-preview-container" style="background: #101010;">
+                            <div class="run-scroll-content" id="shake-scroll-content">
+                                <div class="run-spacer" id="shake-spacer"></div>
+                                <div class="run-text effect-btn-shake" id="shake-text" style="font-size: 120px; font-weight: bold; color: #F8F8F8;" data-text="抖动效果演示">抖动效果演示</div>
+                                <div class="run-gap"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	<script>
-		// State
-		let state = {
-			text: '',
-			colorIndex: 0,
-			fontIndex: 0,
-			sizeIndex: 1,
-			speed: 2.0
-		};
+        <!-- Design System -->
+        <div class="screen" id="design-screen">
+            <div class="design-system">
+                <h2>手持字幕 设计规范文档</h2>
 
-		const colors = [
-			{ bg: '#101010', text: '#F8F8F8', name: '黑底白字' },
-			{ bg: '#101010', text: '#FF4D4F', name: '黑底红字' },
-			{ bg: '#101010', text: '#00FF29', name: '黑底绿字' },
-			{ bg: '#000A7B', text: '#F8F8F8', name: '蓝底白字' },
-			{ bg: '#101010', name: '闪烁效果' },
-			{ bg: '#101010', name: '抖动效果' },
-		];
+                <div class="design-section">
+                    <h3>色彩系统</h3>
+                    <div class="color-grid">
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #101010;"></div>
+                            <div class="color-info">
+                                <div class="color-name">primary_dark</div>
+                                <div class="color-value">#FF101010</div>
+                                <div class="color-usage">主背景、运行按钮、滑块 Thumb、面板主按钮</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #F8F8F8; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">primary_light</div>
+                                <div class="color-value">#FFF8F8F8</div>
+                                <div class="color-usage">页面背景、AppBar 背景、面板背景、默认文字色</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #FFFFFF; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">white</div>
+                                <div class="color-value">#FFFFFFFF</div>
+                                <div class="color-usage">输入框背景色、选项按钮默认背景</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #EBEBEB; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">border_light</div>
+                                <div class="color-value">#FFEBEBEB</div>
+                                <div class="color-usage">输入框边框、虚线分隔线颜色</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #E9E9E9; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">panel_border</div>
+                                <div class="color-value">#FFE9E9E9</div>
+                                <div class="color-usage">右侧面板左边框</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #E0E0E0; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">slider_inactive</div>
+                                <div class="color-value">#FFE0E0E0</div>
+                                <div class="color-usage">滑块轨道（未激活段）</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #BBBBBB; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">border_muted</div>
+                                <div class="color-value">#FFBBBBBB</div>
+                                <div class="color-usage">选项按钮边框（非选中态）</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #000A7B;"></div>
+                            <div class="color-info">
+                                <div class="color-name">theme_blue</div>
+                                <div class="color-value">#FF000A7B</div>
+                                <div class="color-usage">蓝底白字主题色</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #FF4D4F;"></div>
+                            <div class="color-info">
+                                <div class="color-name">danger</div>
+                                <div class="color-value">#FFFF4D4F</div>
+                                <div class="color-usage">危险操作色（退出按钮文字、黑底红字主题）</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #FFF4F4; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">danger_soft</div>
+                                <div class="color-value">#FFFFF4F4</div>
+                                <div class="color-usage">危险按钮背景色（退出按钮）</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #FFDCDD; border: 1px solid #eee;"></div>
+                            <div class="color-info">
+                                <div class="color-name">danger_border</div>
+                                <div class="color-value">#FFFFDCDD</div>
+                                <div class="color-usage">危险按钮边框色</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-preview" style="background: #00FF29;"></div>
+                            <div class="color-info">
+                                <div class="color-name">theme_green</div>
+                                <div class="color-value">#FF00FF29</div>
+                                <div class="color-usage">黑底绿字主题色（LED风格）</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-		const fonts = [
-			{ label: '默认', family: 'sans-serif' },
-			{ label: '方正·简', family: 'serif' },
-			{ label: '卡通', family: 'cursive' },
-			{ label: '得意黑', family: 'fantasy' },
-		];
+                <div class="design-section">
+                    <h3>主题配色</h3>
+                    <div class="theme-grid">
+                        <div class="theme-card">
+                            <div class="theme-preview" style="background: #101010; color: #F8F8F8;">黑底白字</div>
+                            <div class="theme-info">
+                                <div class="theme-name">黑底白字 - 默认主题</div>
+                            </div>
+                        </div>
+                        <div class="theme-card">
+                            <div class="theme-preview" style="background: #101010; color: #FF4D4F;">黑底红字</div>
+                            <div class="theme-info">
+                                <div class="theme-name">黑底红字 - 醒目提示</div>
+                            </div>
+                        </div>
+                        <div class="theme-card">
+                            <div class="theme-preview" style="background: #101010; color: #00FF29;">黑底绿字</div>
+                            <div class="theme-info">
+                                <div class="theme-name">黑底绿字 - LED风格</div>
+                            </div>
+                        </div>
+                        <div class="theme-card">
+                            <div class="theme-preview" style="background: #000A7B; color: #F8F8F8;">蓝底白字</div>
+                            <div class="theme-info">
+                                <div class="theme-name">蓝底白字 - 经典配色</div>
+                            </div>
+                        </div>
+                        <div class="theme-card">
+                            <div class="theme-preview effect-flash" style="background: #101010;">闪烁效果</div>
+                            <div class="theme-info">
+                                <div class="theme-name">闪烁效果 - 彩虹闪烁 (2s 循环)</div>
+                            </div>
+                        </div>
+                        <div class="theme-card">
+                            <div class="theme-preview" style="background: #101010;">
+                                <span class="effect-btn-shake" data-text="抖动效果" style="font-size: 16px; font-weight: bold; color: #F8F8F8;">抖动效果</span>
+                            </div>
+                            <div class="theme-info">
+                                <div class="theme-name">抖动效果 - 故障风格 (500ms 循环)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-		const sizes = [
-			{ label: '较小', value: 0.45 },
-			{ label: '适中', value: 0.60 },
-			{ label: '较大', value: 0.75 },
-			{ label: '全屏', value: 1.00 },
-		];
+                <div class="design-section">
+                    <h3>字体规范</h3>
+                    <div class="typography-list">
+                        <div class="typography-item">
+                            <div class="typography-label">标题栏 - 20sp, Bold, #101010, letter-spacing: 0.5px</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #101010; letter-spacing: 0.5px;">手持字幕</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">文本输入 - 16sp, Regular, #101010, 高 90px, 圆角 5px, border #EBEBEB</div>
+                            <div style="font-size: 16px; color: #101010; background: #FFFFFF; border: 1px solid #EBEBEB; border-radius: 5px; padding: 10px; width: 100%; max-width: 300px;">输入字幕... ...</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">选项标签 - 18sp, Regular, #101010, margin-right: 10px</div>
+                            <div style="font-size: 18px; color: #101010; margin-right: 10px;">速 度：</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">选项按钮 - 14sp, 400, #101010 (选中: 700, border 1.5px)</div>
+                            <div style="font-size: 14px; font-weight: 400; color: #101010; background: #FFF; border: 1px solid rgba(187,187,187,0.5); padding: 5px 15px; border-radius: 10px; display: inline-block;">黑底白字</div>
+                            <div style="margin-top: 6px; font-size: 14px; font-weight: 700; color: #101010; background: #FFF; border: 1.5px solid rgba(16,16,16,0.5); padding: 5px 15px; border-radius: 10px; display: inline-block; margin-left: 10px;">选中态</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">运行按钮 - 18sp, Bold, #F8F8F8 on #101010</div>
+                            <div style="font-size: 18px; font-weight: bold; color: #F8F8F8; background: #101010; padding: 12px 24px; border-radius: 10px; display: inline-block; letter-spacing: 4px; box-shadow: 0 5px 12px rgba(16,16,16,0.28);">运 行</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">面板标题 - 20sp, 700, #101010</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #101010;">操作面板</div>
+                        </div>
+                        <div class="typography-item">
+                            <div class="typography-label">面板按钮 - 18sp, 600, 56px 高, 圆角 16px</div>
+                            <div style="display: flex; gap: 28px; flex-direction: column;">
+                                <span style="font-size: 18px; font-weight: 600; color: #FFF; background: #101010; height: 56px; line-height: 56px; padding: 0 24px; border-radius: 16px; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    修改样式
+                                </span>
+                                <span style="font-size: 18px; font-weight: 600; color: #FF4D4F; background: #FFF4F4; height: 56px; line-height: 56px; padding: 0 24px; border-radius: 16px; display: flex; align-items: center; gap: 8px; border: 1px solid #FFDCDD;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
+                                    退出程序
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-		// DOM Elements
-		const textInput = document.getElementById('text-input');
-		const previewBox = document.getElementById('preview-box');
-		const previewText = document.getElementById('preview-text');
+                <div class="design-section">
+                    <h3>字体资源</h3>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h4>已注册字体</h4>
+                            <ul>
+                                <li><strong>默认</strong> - Din (系统回退)</li>
+                                <li><strong>方正·简</strong> - FangZheng-JianTi</li>
+                                <li><strong>卡通</strong> - HanYiZhiYan-KaTong</li>
+                                <li><strong>得意黑</strong> - SmileySans</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>字体文件</h4>
+                            <ul>
+                                <li>方正楷体简体中文.ttf</li>
+                                <li>汉仪字研卡通.ttf</li>
+                                <li>SmileySans-Oblique.ttf</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-		const colorOptionsEl = document.getElementById('color-options');
-		const fontOptionsEl = document.getElementById('font-options');
-		const sizeOptionsEl = document.getElementById('size-options');
-		const speedInput = document.getElementById('speed-input');
+                <div class="design-section">
+                    <h3>尺寸与间距规范</h3>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h4>布局尺寸</h4>
+                            <ul>
+                                <li>手机屏幕: 375 x 812 px</li>
+                                <li>状态栏: 44 px</li>
+                                <li>AppBar: 60 px (56 dp 设计稿)</li>
+                                <li>输入框: 90 px 高, 圆角 5px</li>
+                                <li>选项行: 最小 59 px 高</li>
+                                <li>运行按钮: 45 px 高, 圆角 10px</li>
+                                <li>预览/运行区域: 21:9 比例, 圆角 16px</li>
+                                <li>手机圆角: 40px (外框 50px)</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>组件尺寸</h4>
+                            <ul>
+                                <li>颜色按钮: 高 36px, 圆角 10px, 最小宽度 70px</li>
+                                <li>字体/大小按钮: 高 36px, 圆角 10px, 最小宽度 70px</li>
+                                <li>选项按钮间距: 10 px (margin-right)</li>
+                                <li>面板占屏宽: 66% (动态, 240~320px 自适应)</li>
+                                <li>面板圆角: 24px (左侧)</li>
+                                <li>面板按钮: 56px 高, 圆角 16px</li>
+                                <li>滚动文字后间隔: 50 px</li>
+                                <li>关闭按钮: 34x34 px, 圆角 50%</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>间距</h4>
+                            <ul>
+                                <li>内容左右: 20 px</li>
+                                <li>内容底部: 34 px</li>
+                                <li>预览区上下: 15 px</li>
+                                <li>虚线分隔线: 高度 1px, 无 margin</li>
+                                <li>面板内边距: 16 px</li>
+                                <li>面板按钮间距: 28 px (margin-top)</li>
+                                <li>滑块轨道: 3 px 高</li>
+                                <li>滑块 Thumb: 20px 直径, 无边框, 阴影 0 1px 4px rgba(0,0,0,0.2)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-		const runBtn = document.getElementById('run-btn');
-		const pageHome = document.getElementById('page-home');
-		const pageRun = document.getElementById('page-run');
-		const runWrapper = document.getElementById('run-wrapper');
-		const runText = document.getElementById('run-text');
+                <div class="design-section">
+                    <h3>动画与过渡</h3>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h4>页面过渡</h4>
+                            <ul>
+                                <li>主界面→运行界面: 缩放淡入 (0.92→1.0 Scale + 0→1 Fade, 350ms easeOutCubic)</li>
+                                <li>运行界面→主界面: 反向缩放淡出, 动画完成后自动恢复竖屏（无硬编码延迟）</li>
+                                <li>Hero 共享元素: 预览组件通过 Hero(tag: 'run_preview') 在页面间平滑位置过渡</li>
+                                <li>面板滑入: 320ms easeOutCubic (右侧滑入, translateX: 100% → 0)</li>
+                                <li>面板滑出: 等待 350ms 确保面板完全退出后再触发返回动作</li>
+                                <li>运行按钮阴影: box-shadow 常驻 0 5px 12px rgba(16,16,16,0.28)</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>效果动画</h4>
+                            <ul>
+                                <li>闪烁效果: 2s linear infinite, 7色彩虹循环 (白→红→黄→绿→蓝→紫→青→白)</li>
+                                <li>闪烁附带: text-shadow 同色发光效果</li>
+                                <li>抖动效果: 500ms ease-in-out infinite alternate, 3层分离</li>
+                                <li>抖动层1: 粉色描边 6px, 随机位移 (-5~5px)</li>
+                                <li>抖动层2: 青色描边 3px, 随机位移 (-5~5px)</li>
+                                <li>抖动层3: 纯色前景, 随机位移 (-5~5px)</li>
+                                <li>滚动文字: requestAnimationFrame 驱动, 线性无限循环</li>
+                                <li>滚动速度: 基础 60 px/s × 速度倍率 (0.5~5.0)</li>
+                                <li>滚动循环: loopWidth = boxWidth + textWidth + 50px gap</li>
+                                <li>生命周期感知: App 切后台时停止动画循环，恢复前台后从断点续播</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-		const runPanelOverlay = document.getElementById('run-panel-overlay');
-		const runPanel = document.getElementById('run-panel');
-		const panelClose = document.getElementById('panel-close');
-		const btnEdit = document.getElementById('btn-edit');
-		const btnExit = document.getElementById('btn-exit');
+                <div class="design-section">
+                    <h3>导航流程</h3>
+                    <div class="flow-diagram">
+                        <div class="flow-step">
+                            <div class="flow-number">1</div>
+                            <div class="flow-text">启动应用 → 主界面 (竖屏锁定)</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">2</div>
+                            <div class="flow-text">输入文字 → 实时预览滚动效果</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">3</div>
+                            <div class="flow-text">选择主题 / 字体 / 大小 / 速度</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">4</div>
+                            <div class="flow-text">点击"运行" → 缩放淡入过渡 (0.92→1 Scale + 0→1 Fade, 350ms) → 全屏横屏</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">5</div>
+                            <div class="flow-text">点击屏幕 → 弹出右侧操作面板 (320ms 右侧滑入)</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">6</div>
+                            <div class="flow-text">修改样式 → 面板滑出(350ms等待)→ 立即 pop 返回主界面(动画完成后恢复竖屏)</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">
+                            <div class="flow-number">7</div>
+                            <div class="flow-text">退出程序 → SystemNavigator.pop()</div>
+                        </div>
+                    </div>
+                </div>
 
-		// Initialization
-		function init() {
-			renderColors();
-			renderFonts();
-			renderSizes();
-			bindEvents();
-			enableDragScroll();
-			updatePreview();
-		}
+                <div class="design-section">
+                    <h3>图标系统 (Material Icons)</h3>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h4>操作图标</h4>
+                            <ul>
+                                <li>关闭: Icons.close_rounded (18sp)</li>
+                                <li>编辑: Icons.edit (22sp)</li>
+                                <li>退出: Icons.power_settings_new (22sp)</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>状态栏图标</h4>
+                            <ul>
+                                <li>WiFi 信号</li>
+                                <li>电池电量</li>
+                                <li>时间显示: 9:41</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-		function enableDragScroll() {
-			const scrolls = document.querySelectorAll('.option-scroll');
-			scrolls.forEach(slider => {
-				let isDown = false;
-				let startX;
-				let scrollLeft;
+                <div class="design-section">
+                    <h3>滚动原理 (原型 JS 实现)</h3>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h4>布局结构</h4>
+                            <ul>
+                                <li>容器: absolute + flex, white-space: nowrap</li>
+                                <li>内容: flex-row [Spacer(boxWidth), Text, Gap(50px)]</li>
+                                <li>循环宽度: boxWidth + textWidth + 50</li>
+                                <li>字体大小: boxHeight * size比例</li>
+                                <li>boxHeight = boxWidth / (21/9)</li>
+                            </ul>
+                        </div>
+                        <div class="component-card">
+                            <h4>动画逻辑</h4>
+                            <ul>
+                                <li>驱动: requestAnimationFrame 递归循环</li>
+                                <li>偏移: -(elapsedSeconds * velocity) % loopWidth</li>
+                                <li>应用: CSS transform: translateX(dx)</li>
+                                <li>基础速度: 60 px/s × 速度倍率 (0.5~5.0)</li>
+                                <li>GAP: 50px (文字后空白间距)</li>
+                                <li>不足 0 时: 50ms 延迟重试 (等 layout)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-				slider.addEventListener('mousedown', (e) => {
-					isDown = true;
-					slider.style.cursor = 'grabbing';
-					startX = e.pageX - slider.offsetLeft;
-					scrollLeft = slider.scrollLeft;
-				});
-				slider.addEventListener('mouseleave', () => {
-					isDown = false;
-					slider.style.cursor = '';
-				});
-				slider.addEventListener('mouseup', () => {
-					isDown = false;
-					slider.style.cursor = '';
-				});
-				slider.addEventListener('mousemove', (e) => {
-					if (!isDown) return;
-					e.preventDefault();
-					const x = e.pageX - slider.offsetLeft;
-					const walk = (x - startX) * 1.5; // 滑动灵敏度
-					slider.scrollLeft = scrollLeft - walk;
-				});
-			});
-		}
+    <script>
+        // Tab switching
+        document.querySelectorAll('.screen-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.screen-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                const screenId = tab.dataset.screen + '-screen';
+                document.getElementById(screenId).classList.add('active');
+                hidePanel();
 
-		function renderColors() {
-			colorOptionsEl.innerHTML = '';
-			colors.forEach((c, idx) => {
-				const btn = document.createElement('div');
-				btn.className = 'opt-btn color-btn' + (state.colorIndex === idx ? ' selected' : '');
-				btn.style.backgroundColor = c.bg;
-				btn.style.borderColor = state.colorIndex === idx ? c.bg : '#BBBBBB80';
-				if (c.name === '闪烁效果' || c.name === '抖动效果') {
-					btn.style.color = '#FFF'; // 假设默认白色
-				} else {
-					btn.style.color = c.text;
-				}
-				btn.innerText = c.name;
-				btn.onclick = () => {
-					state.colorIndex = idx;
-					renderColors();
-					updatePreview();
-				};
-				colorOptionsEl.appendChild(btn);
-			});
-		}
+                if (screenId === 'run-screen') startRun();
+                if (screenId === 'flash-screen') startFlashScroll();
+                if (screenId === 'shake-screen') startShakeScroll();
+            });
+        });
 
-		function renderFonts() {
-			fontOptionsEl.innerHTML = '';
-			fonts.forEach((f, idx) => {
-				const btn = document.createElement('div');
-				btn.className = 'opt-btn' + (state.fontIndex === idx ? ' selected' : '');
-				btn.innerText = f.label;
-				btn.onclick = () => {
-					state.fontIndex = idx;
-					renderFonts();
-					updatePreview();
-				};
-				fontOptionsEl.appendChild(btn);
-			});
-		}
+        // State
+        let state = {
+            text: '',
+            colorIndex: 0,
+            fontIndex: 0,
+            sizeIndex: 1,
+            speed: 2.0
+        };
 
-		function renderSizes() {
-			sizeOptionsEl.innerHTML = '';
-			sizes.forEach((s, idx) => {
-				const btn = document.createElement('div');
-				btn.className = 'opt-btn' + (state.sizeIndex === idx ? ' selected' : '');
-				btn.innerText = s.label;
-				btn.onclick = () => {
-					state.sizeIndex = idx;
-					renderSizes();
-					updatePreview();
-				};
-				sizeOptionsEl.appendChild(btn);
-			});
-		}
+        const colors = [
+            { bg: '#101010', text: '#F8F8F8', name: '黑底白字' },
+            { bg: '#101010', text: '#FF4D4F', name: '黑底红字' },
+            { bg: '#101010', text: '#00FF29', name: '黑底绿字' },
+            { bg: '#000A7B', text: '#F8F8F8', name: '蓝底白字' },
+            { bg: '#101010', name: '闪烁效果' },
+            { bg: '#101010', name: '抖动效果' },
+        ];
 
-		function bindEvents() {
-			textInput.addEventListener('input', (e) => {
-				state.text = e.target.value;
-				updatePreview();
-			});
+        const fonts = [
+            { label: '默认', family: 'Din' },
+            { label: '方正·简', family: 'FangZheng-JianTi' },
+            { label: '卡通', family: 'HanYiZhiYan-KaTong' },
+            { label: '得意黑', family: 'SmileySans' },
+        ];
 
-			speedInput.addEventListener('input', (e) => {
-				state.speed = parseFloat(e.target.value);
-				updatePreview();
-			});
+        const sizes = [
+            { label: '较小', size: 13, value: 0.45 },
+            { label: '适中', size: 14, value: 0.60 },
+            { label: '较大', size: 16, value: 0.75 },
+            { label: '全屏', size: 18, value: 1.00 },
+        ];
 
-			runBtn.addEventListener('click', () => {
-				startRun();
-			});
+        const textInput = document.getElementById('text-input');
+        const previewBox = document.getElementById('preview-box');
+        const previewScrollContent = document.getElementById('preview-scroll-content');
+        const previewSpacer = document.getElementById('preview-spacer');
+        const previewText = document.getElementById('preview-text');
+        const colorOptionsEl = document.getElementById('color-options');
+        const fontOptionsEl = document.getElementById('font-options');
+        const sizeOptionsEl = document.getElementById('size-options');
+        const speedInput = document.getElementById('speed-input');
+        const runBtn = document.getElementById('run-btn');
 
-			runWrapper.addEventListener('click', () => {
-				showPanel();
-			});
+        const GAP = 50;
 
-			panelClose.addEventListener('click', hidePanel);
-			runPanelOverlay.addEventListener('click', (e) => {
-				if (e.target === runPanelOverlay) hidePanel();
-			});
+        function init() {
+            renderColors();
+            renderFonts();
+            renderSizes();
+            bindEvents();
+            updatePreview();
+        }
 
-			btnEdit.addEventListener('click', () => {
-				hidePanel();
-				stopRun();
-			});
+        function renderColors() {
+            colorOptionsEl.innerHTML = '';
+            colors.forEach((c, idx) => {
+                const btn = document.createElement('div');
+                const isSelected = state.colorIndex === idx;
+                btn.className = 'color-btn' + (isSelected ? ' selected' : '');
+                btn.style.backgroundColor = c.bg;
+                btn.style.borderColor = isSelected ? c.bg : 'rgba(187,187,187,0.5)';
+                btn.style.borderWidth = isSelected ? '1.5px' : '1px';
+                if (c.name === '闪烁效果') {
+                    const flashSpan = document.createElement('span');
+                    flashSpan.className = 'effect-flash';
+                    flashSpan.style.fontSize = '14px';
+                    flashSpan.style.fontWeight = 'bold';
+                    flashSpan.textContent = c.name;
+                    btn.appendChild(flashSpan);
+                } else if (c.name === '抖动效果') {
+                    const shakeSpan = document.createElement('span');
+                    shakeSpan.className = 'effect-btn-shake';
+                    shakeSpan.setAttribute('data-text', c.name);
+                    shakeSpan.style.color = '#F8F8F8';
+                    shakeSpan.style.fontSize = '14px';
+                    shakeSpan.style.fontWeight = 'bold';
+                    shakeSpan.textContent = c.name;
+                    btn.appendChild(shakeSpan);
+                } else {
+                    btn.style.color = c.text || '#FFF';
+                    btn.innerText = c.name;
+                }
+                btn.onclick = () => {
+                    state.colorIndex = idx;
+                    renderColors();
+                    updatePreview();
+                };
+                colorOptionsEl.appendChild(btn);
+            });
+        }
 
-			btnExit.addEventListener('click', () => {
-				hidePanel();
-				stopRun();
-			});
-		}
+        function renderFonts() {
+            fontOptionsEl.innerHTML = '';
+            fonts.forEach((f, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'opt-btn' + (state.fontIndex === idx ? ' selected' : '');
+                btn.innerText = f.label;
+                btn.style.fontFamily = f.family || 'Din';
+                btn.style.fontSize = '14px';
+                btn.onclick = () => {
+                    state.fontIndex = idx;
+                    renderFonts();
+                    updatePreview();
+                };
+                fontOptionsEl.appendChild(btn);
+            });
+        }
 
-		function updatePreview() {
-			const textToShow = state.text || "输入字幕... ...";
-			previewText.innerText = textToShow;
+        function renderSizes() {
+            sizeOptionsEl.innerHTML = '';
+            sizes.forEach((s, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'opt-btn' + (state.sizeIndex === idx ? ' selected' : '');
+                btn.innerText = s.label;
+                btn.style.fontSize = s.size + 'px';
+                btn.style.fontFamily = 'Din';
+                btn.onclick = () => {
+                    state.sizeIndex = idx;
+                    renderSizes();
+                    updatePreview();
+                };
+                sizeOptionsEl.appendChild(btn);
+            });
+        }
 
-			// Apply styling
-			const c = colors[state.colorIndex];
-			previewBox.style.backgroundColor = c.bg;
-			previewText.style.color = c.text || '#F8F8F8';
+        function bindEvents() {
+            textInput.addEventListener('input', (e) => {
+                state.text = e.target.value;
+                updatePreview();
+            });
 
-			const f = fonts[state.fontIndex];
-			previewText.style.fontFamily = f.family;
+            speedInput.addEventListener('input', (e) => {
+                state.speed = parseFloat(e.target.value);
+                updatePreview();
+            });
 
-			const s = sizes[state.sizeIndex];
-			// calc height of box to set font size properly. Box width 335, ratio 21/9 -> height = 335 / (21/9) ≈ 143.5
-			// fontSize = boxHeight * s.value
-			const boxHeight = (375 - 40) / (21 / 9);
-			previewText.style.fontSize = (boxHeight * s.value) + 'px';
+            // 运行按钮 → 进入运行界面
+            runBtn.addEventListener('click', () => {
+                navigateToRun();
+            });
 
-			// effects styling
-			previewText.className = 'preview-text';
-			if (c.name === '闪烁效果') previewText.classList.add('effect-flash');
-			if (c.name === '抖动效果') previewText.classList.add('effect-shake');
+            // 点击运行画面 → 弹出操作面板
+            document.getElementById('run-fullscreen').addEventListener('click', (e) => {
+                if (!document.getElementById('panel-overlay').classList.contains('active')) {
+                    showPanel();
+                }
+            });
 
-			const boxWidth = previewBox.offsetWidth || (375 - 40);
+            // 点击遮罩层（非面板区域）→ 关闭面板
+            document.getElementById('panel-overlay').addEventListener('click', (e) => {
+                if (!e.target.closest('.right-panel')) {
+                    e.stopPropagation();
+                    hidePanel();
+                }
+            });
 
-			// Temporarily stop animation to accurately calculate width
-			previewText.style.animation = 'none';
-			const textWidth = previewText.offsetWidth;
+            // 面板关闭按钮
+            document.getElementById('panel-close').addEventListener('click', () => {
+                hidePanel();
+            });
 
-			// velocity: speed * 60 px/sec. Calculate correct run duration
-			const velocity = state.speed * 60;
-			const duration = (boxWidth + textWidth) / velocity;
+            // 修改样式 → 面板滑出(350ms) → 返回主界面
+            document.getElementById('panel-edit-btn').addEventListener('click', () => {
+                const overlay = document.getElementById('panel-overlay');
+                overlay.classList.add('closing');
+                // 等面板完全退出后再切页面 (匹配代码 350ms 延迟)
+                setTimeout(() => {
+                    overlay.classList.remove('active', 'closing');
+                    navigateToHome();
+                }, 350);
+            });
 
-			previewText.style.setProperty('--start-x', boxWidth + 'px');
+            // 退出程序
+            document.getElementById('panel-exit-btn').addEventListener('click', () => {
+                window.close();
+            });
 
-			// Force reflow to immediately restart animation from the very beginning
-			void previewText.offsetWidth;
-			previewText.style.animation = `marquee ${duration}s linear infinite`;
-		}
+            // 阻止面板内部点击事件冒泡到 run-fullscreen
+            document.getElementById('right-panel').addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
 
-		function startRun() {
-			pageHome.style.display = 'none';
-			pageRun.style.display = 'block';
+        function navigateToRun() {
+            hidePanel();
 
-			const textToShow = state.text || "输入字幕... ...";
-			runText.innerText = textToShow;
+            const el = document.getElementById('run-screen');
 
-			const c = colors[state.colorIndex];
-			pageRun.style.backgroundColor = c.bg;
-			runText.style.color = c.text || '#F8F8F8';
+            // 切换 tab 和 screen
+            document.querySelectorAll('.screen-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelector('[data-screen="run"]').classList.add('active');
+            el.classList.add('active');
 
-			const f = fonts[state.fontIndex];
-			runText.style.fontFamily = f.family;
+            // 先准备好内容再开始过渡
+            startRun();
 
-			const s = sizes[state.sizeIndex];
-			// In run mode, it is landscape, height = 375.
-			const screenHeight = 375;
-			runText.style.fontSize = (screenHeight * s.value) + 'px';
+            // 缩放淡入过渡 (Scale 0.92→1 + Fade 0→1, 350ms)
+            el.style.animation = 'none';
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.92)';
 
-			runText.className = 'run-text';
-			if (c.name === '闪烁效果') runText.classList.add('effect-flash');
-			if (c.name === '抖动效果') runText.classList.add('effect-shake');
+            void el.offsetHeight;
 
-			const screenWidth = 812; // mock landscape width
-			runText.style.animation = 'none';
-			const textWidth = runText.offsetWidth;
+            el.style.transition = 'transform 0.35s cubic-bezier(0.215, 0.610, 0.355, 1.000), opacity 0.35s ease-out';
+            el.style.opacity = '1';
+            el.style.transform = 'scale(1)';
 
-			const velocity = state.speed * 60;
-			const duration = (screenWidth + textWidth) / velocity;
+            setTimeout(() => {
+                el.style.transition = '';
+                el.style.transform = '';
+                el.style.opacity = '';
+                el.style.animation = '';
+            }, 350);
+        }
 
-			runText.style.setProperty('--start-x', screenWidth + 'px');
-			void runText.offsetWidth; // Force reflow
-			runText.style.animation = `marquee ${duration}s linear infinite`;
-		}
+        function navigateToHome() {
+            // 面板已在调用处做了 closing 动画，此处只需切回 home
+            document.querySelectorAll('.screen-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelector('[data-screen="home"]').classList.add('active');
+            document.getElementById('home-screen').classList.add('active');
+        }
 
-		function stopRun() {
-			pageRun.style.display = 'none';
-			pageHome.style.display = 'flex';
-		}
+        function showPanel() {
+            const overlay = document.getElementById('panel-overlay');
+            overlay.classList.remove('closing');
+            overlay.classList.add('active');
 
-		function showPanel() {
-			runPanelOverlay.style.display = 'block';
-			setTimeout(() => {
-				runPanel.style.right = '0';
-			}, 10);
-		}
+            // 计算面板宽度 (66% 屏幕宽度, 240~320px)
+            const frame = document.querySelector('.phone-frame-landscape');
+            const screenWidth = frame.offsetWidth;
+            let panelWidth = screenWidth * 0.66;
+            panelWidth = Math.max(240, Math.min(320, panelWidth));
+            document.getElementById('right-panel').style.width = panelWidth + 'px';
+        }
 
-		function hidePanel() {
-			runPanel.style.right = '-320px';
-			setTimeout(() => {
-				runPanelOverlay.style.display = 'none';
-			}, 300);
-		}
+        function hidePanel() {
+            const overlay = document.getElementById('panel-overlay');
+            if (!overlay.classList.contains('active')) return;
+            overlay.classList.add('closing');
+            setTimeout(() => {
+                overlay.classList.remove('active', 'closing');
+            }, 250);
+        }
 
-		init();
-	</script>
+        function startScrollAnimation(contentEl, spacerEl, textEl, boxWidth, textWidth, velocity) {
+            if (contentEl._animFrame) cancelAnimationFrame(contentEl._animFrame);
+
+            if (boxWidth <= 0 || textWidth <= 0) {
+                setTimeout(() => {
+                    const retryBoxWidth = contentEl.parentElement.offsetWidth;
+                    const retryTextWidth = textEl.offsetWidth;
+                    if (retryBoxWidth > 0 && retryTextWidth > 0) {
+                        startScrollAnimation(contentEl, spacerEl, textEl, retryBoxWidth, retryTextWidth, velocity);
+                    }
+                }, 50);
+                return;
+            }
+
+            const loopWidth = boxWidth + textWidth + GAP;
+            const startTime = performance.now();
+
+            function animate(now) {
+                const elapsed = (now - startTime) / 1000;
+                const totalDistance = elapsed * velocity;
+                const dx = -(totalDistance % loopWidth);
+                contentEl.style.transform = `translateX(${dx}px)`;
+                contentEl._animFrame = requestAnimationFrame(animate);
+            }
+
+            contentEl._animFrame = requestAnimationFrame(animate);
+        }
+
+        function updatePreview() {
+            const textToShow = state.text || "输入字幕... ...";
+            previewText.innerText = textToShow;
+
+            const c = colors[state.colorIndex];
+            previewBox.style.backgroundColor = c.bg;
+            previewText.style.color = c.text || '#F8F8F8';
+
+            previewText.classList.remove('effect-flash', 'effect-shake');
+            previewText.removeAttribute('data-text');
+            if (c.name === '闪烁效果') {
+                previewText.classList.add('effect-flash');
+            }
+            if (c.name === '抖动效果') {
+                previewText.setAttribute('data-text', textToShow);
+                previewText.classList.add('effect-shake');
+            }
+
+            const f = fonts[state.fontIndex];
+            previewText.style.fontFamily = f.family;
+
+            const s = sizes[state.sizeIndex];
+            const boxWidth = previewBox.offsetWidth;
+            const boxHeight = boxWidth / (21 / 9);
+            const fontSize = boxHeight * s.value;
+            previewText.style.fontSize = fontSize + 'px';
+
+            previewSpacer.style.width = boxWidth + 'px';
+
+            void previewText.offsetWidth;
+            const textWidth = previewText.offsetWidth || 1;
+            const velocity = state.speed * 60;
+
+            startScrollAnimation(previewScrollContent, previewSpacer, previewText, boxWidth, textWidth, velocity);
+        }
+
+        function startRun() {
+            const textToShow = state.text || "输入字幕... ...";
+            const runText = document.getElementById('run-text');
+            const runScrollContent = document.getElementById('run-scroll-content');
+            const runSpacer = document.getElementById('run-spacer');
+            const runPreviewContainer = document.getElementById('run-preview-container');
+            const runBg = document.getElementById('run-bg');
+
+            runText.innerText = textToShow;
+
+            const c = colors[state.colorIndex];
+            runBg.style.backgroundColor = c.bg;
+            runPreviewContainer.style.backgroundColor = c.bg;
+            runText.style.color = c.text || '#F8F8F8';
+
+            runText.classList.remove('effect-flash', 'effect-shake');
+            runText.removeAttribute('data-text');
+            if (c.name === '闪烁效果') {
+                runText.classList.add('effect-flash');
+            }
+            if (c.name === '抖动效果') {
+                runText.setAttribute('data-text', textToShow);
+                runText.classList.add('effect-shake');
+            }
+
+            const f = fonts[state.fontIndex];
+            runText.style.fontFamily = f.family;
+
+            const s = sizes[state.sizeIndex];
+            const boxWidth = runPreviewContainer.offsetWidth;
+            const boxHeight = boxWidth / (21 / 9);
+            const fontSize = boxHeight * s.value;
+            runText.style.fontSize = fontSize + 'px';
+
+            runSpacer.style.width = boxWidth + 'px';
+
+            void runText.offsetWidth;
+            const textWidth = runText.offsetWidth || 1;
+            const velocity = state.speed * 60;
+
+            startScrollAnimation(runScrollContent, runSpacer, runText, boxWidth, textWidth, velocity);
+        }
+
+        function startScrollFor(containerId, scrollContentId, spacerId, textId, text, fontSize, color, bgColor, velocity, addFlash, addShake) {
+            const container = document.getElementById(containerId);
+            const scrollContent = document.getElementById(scrollContentId);
+            const spacer = document.getElementById(spacerId);
+            const textEl = document.getElementById(textId);
+
+            if (!container || !scrollContent || !spacer || !textEl) return;
+
+            textEl.innerText = text;
+            textEl.style.fontSize = fontSize + 'px';
+            textEl.style.color = color;
+            container.style.backgroundColor = bgColor;
+
+            textEl.classList.remove('effect-flash', 'effect-shake');
+            textEl.removeAttribute('data-text');
+            if (addFlash) {
+                textEl.classList.add('effect-flash');
+            }
+            if (addShake) {
+                textEl.setAttribute('data-text', text);
+                textEl.classList.add('effect-shake');
+            }
+
+            const boxWidth = container.offsetWidth;
+            spacer.style.width = boxWidth + 'px';
+
+            void textEl.offsetWidth;
+            const textWidth = textEl.offsetWidth || 1;
+
+            startScrollAnimation(scrollContent, spacer, textEl, boxWidth, textWidth, velocity);
+        }
+
+        function startFlashScroll() {
+            startScrollFor(
+                'flash-preview-container', 'flash-scroll-content', 'flash-spacer', 'flash-text',
+                '闪烁效果演示', 120, '#FFFFFF', '#101010', 120, true, false
+            );
+        }
+
+        function startShakeScroll() {
+            startScrollFor(
+                'shake-preview-container', 'shake-scroll-content', 'shake-spacer', 'shake-text',
+                '抖动效果演示', 120, '#F8F8F8', '#101010', 120, false, true
+            );
+        }
+
+
+        // Drag-to-scroll for option rows
+        document.querySelectorAll('.option-scroll').forEach(el => {
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+            el.addEventListener('mousedown', (e) => {
+                isDown = true;
+                startX = e.pageX - el.offsetLeft;
+                scrollLeft = el.scrollLeft;
+                el.style.userSelect = 'none';
+            });
+            el.addEventListener('mouseleave', () => {
+                isDown = false;
+                el.style.userSelect = '';
+            });
+            el.addEventListener('mouseup', () => {
+                isDown = false;
+                el.style.userSelect = '';
+            });
+            el.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - el.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                el.scrollLeft = scrollLeft - walk;
+            });
+        });
+
+        init();
+    </script>
 </body>
-
 </html>

@@ -293,7 +293,7 @@ class _RunPageRightSheetContentState extends State<RunPageRightSheetContent>
         ),
         onPressed: () async {
           Navigator.of(context).pop();
-          await Future.delayed(const Duration(milliseconds: 220));
+          await Future.delayed(const Duration(milliseconds: 350));
           onPressed();
         },
       ),

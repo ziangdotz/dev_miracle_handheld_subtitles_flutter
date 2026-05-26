@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dev_miracle_handheld_subtitles_flutter/models/subtitles_config.dart';
 import 'package:dev_miracle_handheld_subtitles_flutter/views/handheld_subtitles/shaking_text.dart';
 import 'package:dev_miracle_handheld_subtitles_flutter/views/handheld_subtitles/flashing_text.dart';
 import 'package:dev_miracle_handheld_subtitles_flutter/views/handheld_subtitles/handheld_subtitles_run_preview.dart';
@@ -40,7 +41,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFieldFocusNode = FocusNode();
 
-  // 颜色主题配置
   final List<Map<String, dynamic>> _colorTheme = [
     {
       'bg': const Color(0xFF101010),
@@ -66,7 +66,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     {'bg': const Color(0xFF101010), 'name': '抖动效果'},
   ];
 
-  // 字体配置列表
   final List<Map<String, dynamic>> _fontChoose = [
     {'label': '默认', 'family': 'Din'},
     {'label': '方正·简', 'family': 'FangZheng-JianTi'},
@@ -74,7 +73,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     {'label': '得意黑', 'family': 'SmileySans'},
   ];
 
-  // 大小配置列表
   final List<Map<String, dynamic>> _fontSize = [
     {'label': '较小', 'size': 13.0, 'value': 0.45},
     {'label': '适中', 'size': 14.0, 'value': 0.60},
@@ -87,17 +85,22 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
   int _selectedFontSizeIndex = 1;
   double _speed = 2.0;
 
+  SubtitlesConfig? _cachedConfig;
+  int _cachedColorThemeIndex = -1;
+  int _cachedFontChooseIndex = -1;
+  int _cachedFontSizeIndex = -1;
+  double _cachedSpeed = -1;
+  String _cachedRawText = '';
+
   @override
   void initState() {
     super.initState();
 
-    // 强制竖屏
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
 
-    // 延迟全屏
     Future.delayed(Duration.zero, () {
       _enterFullscreen();
     });
@@ -108,7 +111,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     _textFieldFocusNode.dispose();
     _textController.dispose();
 
-    // 恢复默认屏幕方向
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -116,7 +118,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
       DeviceOrientation.landscapeRight,
     ]);
 
-    // 退出页面时恢复系统 UI
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     super.dispose();
@@ -137,11 +138,8 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
           toolbarHeight: 60.0,
           backgroundColor: const Color(0xFFF8F8F8),
           elevation: 0,
-          // 保持标题居中
           centerTitle: true,
-          // 设置 leading 的宽度 = 图标大小(24) + 左边距(20) = 44
           leadingWidth: 44.0,
-          // 移除标题周围的默认间距，防止标题过长时位置偏移
           titleSpacing: 0,
           title: const Text(
             '手持字幕',
@@ -155,7 +153,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
           actions: [const SizedBox(width: 20.0)],
         ),
 
-        /// 保证键盘弹出时页面能滚动
         resizeToAvoidBottomInset: true,
         body: Column(
           children: [
@@ -171,10 +168,7 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// 1. 预览
                     _buildPreview(),
-
-                    /// 2. 输入框
                     Container(
                       height: 90,
                       padding: const EdgeInsets.symmetric(
@@ -184,7 +178,8 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: Color(0xFFFFFFFF),
-                          border: Border.all(color: const Color(0xFFEBEBEB)),
+                          border:
+                              Border.all(color: const Color(0xFFEBEBEB)),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -194,17 +189,12 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                         child: TextField(
                           controller: _textController,
                           focusNode: _textFieldFocusNode,
-                          // 允许多行
                           maxLines: null,
                           onChanged: (val) {
-                            // 触发 UI 刷新以更新预览
                             setState(() {});
                           },
-                          // 光标颜色
                           cursorColor: const Color(0xFF101010),
-                          // 光标粗细
                           cursorWidth: 1,
-                          // 圆角光标
                           cursorRadius: const Radius.circular(2),
                           decoration: const InputDecoration(
                             hintText: "输入字幕... ...",
@@ -221,8 +211,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       totalHeight: 1.0,
                       dashWidth: 2.0,
                     ),
-
-                    /// 3. 颜色选择（横向滚动）
                     Container(
                       width: double.infinity,
                       height: 59,
@@ -235,7 +223,8 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: List.generate(_colorTheme.length, (index) {
+                          children:
+                              List.generate(_colorTheme.length, (index) {
                             final item = _colorTheme[index];
                             final isSelected =
                                 _selectedColorThemeIndex == index;
@@ -244,14 +233,15 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                                 () => _selectedColorThemeIndex = index,
                               ),
                               child: Container(
-                                constraints: const BoxConstraints(minWidth: 70),
-                                margin: const EdgeInsets.only(right: 10),
+                                constraints:
+                                    const BoxConstraints(minWidth: 70),
+                                margin:
+                                    const EdgeInsets.only(right: 10),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 15,
                                   vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
-                                  // 按钮背景色
                                   color: item['bg'],
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
@@ -280,7 +270,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                                     : Text(
                                         item['name'],
                                         style: TextStyle(
-                                          // 按钮文字颜色
                                           color: item['text'],
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -297,14 +286,13 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       totalHeight: 1.0,
                       dashWidth: 2.0,
                     ),
-
-                    /// 4. 字体选择
                     _buildOptionRow(
                       label: "字  体：",
                       items: _fontChoose,
                       selectedIndex: _selectedFontChooseIndex,
                       onItemSelected: (index) {
-                        setState(() => _selectedFontChooseIndex = index);
+                        setState(
+                            () => _selectedFontChooseIndex = index);
                       },
                     ),
                     const DashedDivider(
@@ -312,14 +300,13 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       totalHeight: 1.0,
                       dashWidth: 2.0,
                     ),
-
-                    /// 5. 大小选择
                     _buildOptionRow(
                       label: "大  小：",
                       items: _fontSize,
                       selectedIndex: _selectedFontSizeIndex,
                       onItemSelected: (index) {
-                        setState(() => _selectedFontSizeIndex = index);
+                        setState(
+                            () => _selectedFontSizeIndex = index);
                       },
                     ),
                     const DashedDivider(
@@ -327,8 +314,6 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                       totalHeight: 1.0,
                       dashWidth: 2.0,
                     ),
-
-                    /// 6. 速度调节
                     Container(
                       padding: const EdgeInsets.only(
                         top: 13.0,
@@ -348,31 +333,38 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                           Expanded(
                             child: SliderTheme(
                               data: SliderTheme.of(context).copyWith(
-                                activeTrackColor: const Color(0xFF101010),
-                                inactiveTrackColor: const Color(0xFFE0E0E0),
+                                activeTrackColor:
+                                    const Color(0xFF101010),
+                                inactiveTrackColor:
+                                    const Color(0xFFE0E0E0),
                                 thumbColor: const Color(0xFF101010),
                                 overlayColor: const Color(
                                   0xFF101010,
                                 ).withOpacity(0.2),
                                 trackHeight: 3.0,
-                                // 去掉左右 24 逻辑像素的默认 padding
-                                trackShape: const RoundedRectSliderTrackShape(),
-                                thumbShape: const RoundSliderThumbShape(
+                                trackShape:
+                                    const RoundedRectSliderTrackShape(),
+                                thumbShape:
+                                    const RoundSliderThumbShape(
                                   enabledThumbRadius: 10,
                                 ),
-                                overlayShape: const RoundSliderOverlayShape(
+                                overlayShape:
+                                    const RoundSliderOverlayShape(
                                   overlayRadius: 0,
                                 ),
                                 valueIndicatorShape:
                                     const PaddleSliderValueIndicatorShape(),
-                                valueIndicatorColor: const Color(0xFF101010),
-                                showValueIndicator: ShowValueIndicator.always,
+                                valueIndicatorColor:
+                                    const Color(0xFF101010),
+                                showValueIndicator:
+                                    ShowValueIndicator.always,
                               ),
                               child: Slider(
                                 value: _speed,
                                 min: 0.5,
                                 max: 5.0,
-                                label: "${_speed.toStringAsFixed(1)}x",
+                                label:
+                                    "${_speed.toStringAsFixed(1)}x",
                                 onChanged: (val) {
                                   setState(() {
                                     _speed = val;
@@ -388,10 +380,9 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                 ),
               ),
             ),
-
-            /// 7. 运行按钮
             Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 34),
+              padding:
+                  const EdgeInsets.only(left: 20, right: 20, bottom: 34),
               child: RunButton(
                 text: '运  行',
                 onPressed: () => _doRun(context),
@@ -405,10 +396,8 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     );
   }
 
-  /// 进入全屏
   Future<void> _enterFullscreen() async {
     try {
-      // 设置系统 UI 样式
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -416,10 +405,9 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
           statusBarIconBrightness: Brightness.light,
           systemNavigationBarIconBrightness:
               WidgetsBinding.instance.window.platformBrightness ==
-                  Brightness.dark
-              ? Brightness.light
-              : Brightness.dark,
-          // iOS 状态栏亮度
+                      Brightness.dark
+                  ? Brightness.light
+                  : Brightness.dark,
           statusBarBrightness: Brightness.dark,
         ),
       );
@@ -428,11 +416,36 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     }
   }
 
-  /// 构建预览区域
   Widget _buildPreview() {
-    final displayText = _textController.text.isEmpty
-        ? "输入字幕... ..."
-        : _textController.text;
+    final config = _buildSubtitlesConfig();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 15.0),
+      child: Hero(
+        tag: 'run_preview',
+        child: HandheldSubtitlesRunPreview(
+          key: ValueKey(
+            "preview_$_selectedColorThemeIndex$_selectedFontChooseIndex$_selectedFontSizeIndex$_speed",
+          ),
+          config: config,
+        ),
+      ),
+    );
+  }
+
+  SubtitlesConfig _buildSubtitlesConfig() {
+    final rawText = _textController.text;
+
+    if (_cachedConfig != null &&
+        _cachedColorThemeIndex == _selectedColorThemeIndex &&
+        _cachedFontChooseIndex == _selectedFontChooseIndex &&
+        _cachedFontSizeIndex == _selectedFontSizeIndex &&
+        _cachedSpeed == _speed &&
+        _cachedRawText == rawText) {
+      return _cachedConfig!;
+    }
+
+    final displayText = rawText.isEmpty ? "输入字幕... ..." : rawText;
     final currentColorTheme = _colorTheme[_selectedColorThemeIndex];
     final currentFontChoose = _fontChoose[_selectedFontChooseIndex];
     final currentFontSize =
@@ -440,29 +453,29 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     final enableFlashingText = currentColorTheme['name'] == '闪烁效果';
     final enableDouYinText = currentColorTheme['name'] == '抖动效果';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15.0),
-      child: HandheldSubtitlesRunPreview(
-        key: ValueKey(
-          "preview_$_selectedColorThemeIndex$_selectedFontChooseIndex$_selectedFontSizeIndex$_speed",
-        ),
-        bg: currentColorTheme['bg'],
-        text: displayText,
-        size: currentFontSize,
-        style: TextStyle(
-          color: currentColorTheme['text'],
-          fontFamily: currentFontChoose['family'],
-          fontSize: currentFontSize,
-        ),
-        // 基准速度是 60 px/秒
-        velocity: _speed * 60,
-        enableFlashingText: enableFlashingText,
-        enableDouYinText: enableDouYinText,
+    _cachedConfig = SubtitlesConfig(
+      bg: currentColorTheme['bg'],
+      text: displayText,
+      size: currentFontSize,
+      style: TextStyle(
+        color: currentColorTheme['text'],
+        fontFamily: currentFontChoose['family'],
+        fontSize: currentFontSize,
       ),
+      velocity: _speed * 60,
+      enableFlashingText: enableFlashingText,
+      enableDouYinText: enableDouYinText,
     );
+
+    _cachedColorThemeIndex = _selectedColorThemeIndex;
+    _cachedFontChooseIndex = _selectedFontChooseIndex;
+    _cachedFontSizeIndex = _selectedFontSizeIndex;
+    _cachedSpeed = _speed;
+    _cachedRawText = rawText;
+
+    return _cachedConfig!;
   }
 
-  /// 构建通用的横向滚动选项行
   Widget _buildOptionRow({
     required String label,
     required List<dynamic> items,
@@ -493,15 +506,12 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                   final item = items[index];
                   final isSelected = selectedIndex == index;
 
-                  final labelText = item is Map
-                      ? item['label']
-                      : item.toString();
-                  final fontSize = item is Map
-                      ? item['size']?.toDouble() ?? 14.0
-                      : 14.0;
-                  final fontFamily = item is Map
-                      ? item['family'] ?? 'Din'
-                      : 'Din';
+                  final labelText =
+                      item is Map ? item['label'] : item.toString();
+                  final fontSize =
+                      item is Map ? item['size']?.toDouble() ?? 14.0 : 14.0;
+                  final fontFamily =
+                      item is Map ? item['family'] ?? 'Din' : 'Din';
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 10.0),
@@ -527,12 +537,9 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
                         child: Align(
                           alignment: Alignment.center,
                           child: Text(
-                            // 使用统一处理的 label
                             labelText,
                             style: TextStyle(
-                              // 动态字号
                               fontSize: fontSize,
-                              // 动态字体
                               fontFamily: fontFamily,
                               fontWeight: isSelected
                                   ? FontWeight.bold
@@ -554,57 +561,41 @@ class _HandheldSubtitlesPageState extends State<HandheldSubtitlesPage> {
     );
   }
 
-  /// 点击“运行”按钮，执行的方法
   Future<void> _doRun(BuildContext context) async {
-    // 进入运行页前主动移除焦点，避免返回时系统恢复焦点并弹出键盘。
     _textFieldFocusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
 
-    final displayText = _textController.text.isEmpty
-        ? "输入字幕... ..."
-        : _textController.text;
-    final currentColorTheme = _colorTheme[_selectedColorThemeIndex];
-    final currentFontChoose = _fontChoose[_selectedFontChooseIndex];
-    final currentFontSize =
-        _fontSize[_selectedFontSizeIndex]['value'] as double;
-    final enableFlashingText = currentColorTheme['name'] == '闪烁效果';
-    final enableDouYinText = currentColorTheme['name'] == '抖动效果';
+    final config = _buildSubtitlesConfig();
 
     await Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            HandheldSubtitlesRunPage(
-              bg: currentColorTheme['bg'],
-              text: displayText,
-              size: currentFontSize,
-              style: TextStyle(
-                color: currentColorTheme['text'],
-                fontFamily: currentFontChoose['family'],
-                fontSize: currentFontSize,
-              ),
-              // 基准速度是 60 px/秒
-              velocity: _speed * 60,
-              enableFlashingText: enableFlashingText,
-              enableDouYinText: enableDouYinText,
-            ),
+            HandheldSubtitlesRunPage(config: config),
         fullscreenDialog: true,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // 从底部滑动效果
-          const slideBegin = Offset(0.0, 1.0);
-          const slideEnd = Offset.zero;
-          final slideTween = Tween(
-            begin: slideBegin,
-            end: slideEnd,
-          ).chain(CurveTween(curve: Curves.easeOutQuart));
-          final slideAnimation = animation.drive(slideTween);
-          return SlideTransition(position: slideAnimation, child: child);
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              ),
+              child: child,
+            ),
+          );
         },
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 350),
       ),
     );
 
-    // 从运行页返回后再次清理焦点，防止回退动画结束时焦点自动恢复。
+    // After pop animation completes, restore portrait
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     _textFieldFocusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
   }
