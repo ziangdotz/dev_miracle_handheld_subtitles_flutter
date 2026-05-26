@@ -1,4 +1,4 @@
-# Miracle 手持字幕
+# Miracle 手持字幕 （跨平台移动端应用 -- 当前仅适配 Android 端）
 
 ## 目录
 
